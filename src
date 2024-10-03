@@ -1,0 +1,138 @@
+import cv2
+import apriltag
+import numpy as np
+from gpiozero import Motor
+
+motor1 = Motor(18, 17)
+motor2 = Motor(23, 22)
+SPEED_FORWARD = 0.7
+SPEED_BACKWARD = 0.7
+
+cap = cv2.VideoCapture(0)
+
+options = apriltag.DetectorOptions(families='tag36h11')
+detector = apriltag.Detector(options)
+
+# camera intrinsic parameters (random vals rn)
+fx = 600.0  # Focal length in pixels
+fy = 600.0  # Focal length in pixels
+cx = 320.0  # Principal point (optical center) in pixels
+cy = 240.0  # Principal point (optical center) in pixels
+camera_params = (fx, fy, cx, cy)
+
+# follow apriltag
+def follow_april_tag(tag_center, frame_center):
+    if tag_center[0] < frame_center[0] - 50:
+        motor1.backward(SPEED_BACKWARD)
+        motor2.forward(SPEED_FORWARD)
+    elif tag_center[0] > frame_center[0] + 50:
+        motor1.forward(SPEED_FORWARD)
+        motor2.backward(SPEED_BACKWARD)
+    else:
+        motor1.forward(SPEED_FORWARD)
+        motor2.forward(SPEED_FORWARD)
+
+# draw cube function
+def _draw_cube(overlay, camera_params, tag_size, rvec, tvec, z_sign=1):
+    opoints = np.array([
+        [-0.5, -0.5, 0],
+        [0.5, -0.5, 0],
+        [0.5, 0.5, 0],
+        [-0.5, 0.5, 0],
+        [-0.5, -0.5, 1 * z_sign],
+        [0.5, -0.5, 1 * z_sign],
+        [0.5, 0.5, 1 * z_sign],
+        [-0.5, 0.5, 1 * z_sign],
+    ]) * tag_size
+
+    edges = np.array([
+        [0, 1],
+        [1, 2],
+        [2, 3],
+        [3, 0],
+        [0, 4],
+        [1, 5],
+        [2, 6],
+        [3, 7],
+        [4, 5],
+        [5, 6],
+        [6, 7],
+        [7, 4]
+    ])
+
+    fx, fy, cx, cy = camera_params
+    K = np.array([[fx, 0, cx],
+                  [0, fy, cy],
+                  [0, 0, 1]], dtype=float)
+
+    dcoeffs = np.zeros(5)
+
+    ipoints, _ = cv2.projectPoints(opoints, rvec, tvec, K, dcoeffs)
+    ipoints = ipoints.reshape(-1, 2).astype(int)
+
+    for edge in edges:
+        pt1 = tuple(ipoints[edge[0]])
+        pt2 = tuple(ipoints[edge[1]])
+        cv2.line(overlay, pt1, pt2, (0, 255, 0), 2)
+
+# main loop
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        print("Failed to capture image")
+        break
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    detections = detector.detect(gray)
+
+    frame_center = (frame.shape[1] // 2, frame.shape[0] // 2)
+
+    if len(detections) > 0:
+        tag_center = (int(detections[0].center[0]), int(detections[0].center[1]))
+        follow_april_tag(tag_center, frame_center)
+
+        for detection in detections:
+            # Get 2D image points
+            image_points = detection.corners.astype(np.float32)
+            # Define 3D model points of the tag
+            tag_size = 0.1  # Replace with actual tag size in meters
+            model_points = np.array([
+                [-0.5, -0.5, 0],
+                [0.5, -0.5, 0],
+                [0.5, 0.5, 0],
+                [-0.5, 0.5, 0]
+            ]) * tag_size
+
+            #pnp to get pose
+            success, rvec, tvec = cv2.solvePnP(model_points, image_points, np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]]), np.zeros(5))
+            if success:
+                _draw_cube(frame, camera_params, tag_size, rvec, tvec)
+
+    else:
+        motor1.stop()
+        motor2.stop()
+
+    # display
+    for detection in detections:
+        (ptA, ptB, ptC, ptD) = detection.corners.astype(int)
+        cv2.line(frame, tuple(ptA), tuple(ptB), (0, 255, 0), 2)
+        cv2.line(frame, tuple(ptB), tuple(ptC), (0, 255, 0), 2)
+        cv2.line(frame, tuple(ptC), tuple(ptD), (0, 255, 0), 2)
+        cv2.line(frame, tuple(ptD), tuple(ptA), (0, 255, 0), 2)
+
+        (cX, cY) = (int(detection.center[0]), int(detection.center[1]))
+        cv2.circle(frame, (cX, cY), 5, (0, 0, 255), -1)
+
+    cv2.imshow("Frame", frame)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+motor1.stop()
+motor2.stop()
+
+
+
+
