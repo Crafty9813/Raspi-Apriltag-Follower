@@ -14,10 +14,10 @@ options = apriltag.DetectorOptions(families='tag36h11')
 detector = apriltag.Detector(options)
 
 # camera intrinsic parameters (random vals rn)
-fx = 600.0  # Focal length in pixels
-fy = 600.0  # Focal length in pixels
-cx = 320.0  # Principal point (optical center) in pixels
-cy = 240.0  # Principal point (optical center) in pixels
+fx = 600.0  # focal length in px
+fy = 600.0  # focal length in px
+cx = 320.0  # principal point (optical center) in px
+cy = 240.0  # principal point (optical center) in px
 camera_params = (fx, fy, cx, cy)
 
 # follow apriltag
@@ -92,9 +92,9 @@ while True:
         follow_april_tag(tag_center, frame_center)
 
         for detection in detections:
-            # Get 2D image points
+            # get 2D image points
             image_points = detection.corners.astype(np.float32)
-            # Define 3D model points of the tag
+            # 3D model points of the tag
             tag_size = 0.1  # Replace with actual tag size in meters
             model_points = np.array([
                 [-0.5, -0.5, 0],
