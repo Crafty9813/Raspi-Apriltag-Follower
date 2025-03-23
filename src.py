@@ -132,7 +132,3 @@ cap.release()
 cv2.destroyAllWindows()
 motor1.stop()
 motor2.stop()
-
-
-
-
