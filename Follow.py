@@ -13,11 +13,11 @@ cap = cv2.VideoCapture(0)
 options = apriltag.DetectorOptions(families='tag36h11')
 detector = apriltag.Detector(options)
 
-# camera intrinsic parameters (random vals rn)
-fx = 600.0  # focal length in px
-fy = 600.0  # focal length in px
-cx = 320.0  # principal point (optical center) in px
-cy = 240.0  # principal point (optical center) in px
+# Camera intrinsic parameters (random vals rn)
+fx = 600.0  # Focal length in px
+fy = 600.0  # Focal length in px
+cx = 320.0  # Principal point (optical center) in px
+cy = 240.0  # Principal point (optical center) in px
 camera_params = (fx, fy, cx, cy)
 
 # follow apriltag
@@ -32,7 +32,7 @@ def follow_april_tag(tag_center, frame_center):
         motor1.forward(SPEED_FORWARD)
         motor2.forward(SPEED_FORWARD)
 
-# draw cube function
+# Draw cube function for pose, sorta works...? Got from a stack overflow discussion.
 def _draw_cube(overlay, camera_params, tag_size, rvec, tvec, z_sign=1):
     opoints = np.array([
         [-0.5, -0.5, 0],
@@ -75,7 +75,7 @@ def _draw_cube(overlay, camera_params, tag_size, rvec, tvec, z_sign=1):
         pt2 = tuple(ipoints[edge[1]])
         cv2.line(overlay, pt1, pt2, (0, 255, 0), 2)
 
-# main loop
+# Main loop
 while True:
     ret, frame = cap.read()
     if not ret:
@@ -103,7 +103,7 @@ while True:
                 [-0.5, 0.5, 0]
             ]) * tag_size
 
-            #pnp to get pose
+            # PnP to get pose...idrk how perspective n point works lol
             success, rvec, tvec = cv2.solvePnP(model_points, image_points, np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]]), np.zeros(5))
             if success:
                 _draw_cube(frame, camera_params, tag_size, rvec, tvec)
@@ -112,7 +112,7 @@ while True:
         motor1.stop()
         motor2.stop()
 
-    # display
+    # Display the edges of the tag
     for detection in detections:
         (ptA, ptB, ptC, ptD) = detection.corners.astype(int)
         cv2.line(frame, tuple(ptA), tuple(ptB), (0, 255, 0), 2)
