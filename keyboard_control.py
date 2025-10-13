@@ -1,24 +1,22 @@
 import cv2
 import numpy as np
 from gpiozero import Motor
+from gpiozero import Servo
 import time
 
 motor1 = Motor(18, 17)
 motor2 = Motor(23, 22)
+claw = Servo(12, min_pulse_width=0.0006, max_pulse_width=0.0023)
+
+claw.value = 0
+sleep(0.5)
+claw.detach()
+
 SPEED = 1
 
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-options = apriltag.DetectorOptions(families='tag36h11')
-detector = apriltag.Detector(options)
-
-fx = 600.0
-fy = 600.0
-cx = 320.0
-cy = 240.0
-camera_params = (fx, fy, cx, cy)
 
 def stop_motors():
     motor1.stop()
@@ -34,21 +32,6 @@ while True:
     if not ret:
         print("Cant capture")
         break
-
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    detections = detector.detect(gray)
-    frame_center = (frame.shape[1] // 2, frame.shape[0] // 2)
-
-    # Display detections
-    for detection in detections:
-        (ptA, ptB, ptC, ptD) = detection.corners.astype(int)
-        cv2.line(frame, tuple(ptA), tuple(ptB), (0, 255, 0), 2)
-        cv2.line(frame, tuple(ptB), tuple(ptC), (0, 255, 0), 2)
-        cv2.line(frame, tuple(ptC), tuple(ptD), (0, 255, 0), 2)
-        cv2.line(frame, tuple(ptD), tuple(ptA), (0, 255, 0), 2)
-
-        (cX, cY) = (int(detection.center[0]), int(detection.center[1]))
-        cv2.circle(frame, (cX, cY), 5, (0, 0, 255), -1)
 
     cv2.imshow("Frame", frame)
 
@@ -73,6 +56,20 @@ while True:
         if not key_pressed:
             motor1.forward(SPEED)
             motor2.backward(SPEED)
+            key_pressed = True
+
+    elif key == ord('p'):
+        if not key_pressed:
+            claw.value = -0.3
+            sleep(0.5)
+            claw.detach()
+            key_pressed = True
+           
+    elif key == ord('o'):
+        if not key_pressed:
+            claw.value = 0
+            sleep(0.5)
+            claw.detach()
             key_pressed = True
             
     elif key_pressed:
