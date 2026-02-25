@@ -1,2 +1,2 @@
-My Raspberry Pi robot that is autonomous by following AprilTags based on IDs and also uses YOLO so it can follow and pick up certain objects and give them to people. Keyboard control for teleop.
+My autonomous Raspberry Pi robot that listens to voice commands (speech recognition) using a Vosk model and uses YOLO object recognition to pick up objects (like a water bottle) and deliver them to people. Also can follow fiducial markers like AprilTags based on IDs. Keyboard control for teleop.
 <img width="352" height="331" alt="photo of my raspi robot" src="https://github.com/user-attachments/assets/7b5f4930-5bf9-41e4-a595-5253af2bb924" />
