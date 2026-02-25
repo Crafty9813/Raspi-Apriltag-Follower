@@ -1,3 +1,7 @@
+"""
+Follows AprilTags based on IDs. FSM for different ID following so it can perform a series of follows.
+"""
+
 import cv2
 import apriltag
 import numpy as np
