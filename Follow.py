@@ -1,3 +1,7 @@
+"""
+Follows an AprilTag and OpenCV frame shows pose cube.
+"""
+
 import cv2
 import apriltag
 import numpy as np
